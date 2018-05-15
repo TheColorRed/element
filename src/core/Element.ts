@@ -25,22 +25,27 @@ namespace Elemental {
     events?: EventObject
   }
 
+  export interface RootElementalElement extends ElementalElement {
+    parent?: string | HTMLElement | Element
+  }
+
   export class Element {
 
-    public constructor(private el: ElementalElement | string) { }
+    private _rootElement?: HTMLElement
+    public get rootElement() { return this._rootElement }
 
-    public render(location?: string | HTMLElement) {
+    public constructor(private el: RootElementalElement | string) { }
+
+    public render(location?: string | HTMLElement | Element) {
       let loc = document.body
       if (location && typeof location == 'string') loc = document.querySelector(location) as HTMLElement
+      else if (location instanceof Element) loc = location.rootElement as HTMLElement
       else if (location && location instanceof HTMLElement) loc = location as HTMLElement
       if (!loc) return
-      // loc.innerHTML = ''
-      let newEl = this.makeElement(this.el)
-      this.appendChild(this.el, loc, newEl)
-      newEl.dispatchEvent(new Event('rendered'))
+      this._rootElement = this.makeElement(this.el, loc)
     }
 
-    private makeElement<T extends HTMLElement>(elem: ElementalElement | string): T {
+    private makeElement<T extends HTMLElement>(elem: ElementalElement | string, parent: HTMLElement): T {
       let info = this.parseQuerySelector(typeof elem == 'string' ? elem : elem.element || '')
       let el = document.createElement(info.element)
       // Add the classes, attributes and the id to the element
@@ -48,6 +53,7 @@ namespace Elemental {
       info.classList.length > 0 && el.classList.add(...info.classList)
       info.attributes.forEach(a => a.key ? el.setAttribute(a.key, a.value) : el.setAttribute(a.value, a.value))
       info.properties.forEach(p => el.setAttribute(p, p))
+      parent.appendChild(el)
 
       // If the element is a string create the element
       if (typeof elem == 'string') {
@@ -63,16 +69,10 @@ namespace Elemental {
         if (elem && Array.isArray(elem.children)) {
           // The children elements are an array of items
           // Loop through them and add them
-          elem.children.forEach(child => {
-            let newEl = this.makeElement(child)
-            this.appendChild(child, el, newEl)
-            newEl.dispatchEvent(new Event('rendered'))
-          })
+          elem.children.forEach(child => this.makeElement(child, el))
         } else if (elem && ['object', 'string'].includes(typeof elem.children)) {
           // The children elements is a single element either of an object or string
-          let newEl = this.makeElement(elem.children as ElementalElement)
-          this.appendChild(elem, el, newEl)
-          newEl.dispatchEvent(new Event('rendered'))
+          this.makeElement(elem.children as ElementalElement, el)
         }
         // Adds the same event to all the child elements
         this.addChildEvents(elem, el)
@@ -80,36 +80,29 @@ namespace Elemental {
       return el as T
     }
 
-    private appendChild(elem: ElementalElement | string, el: HTMLElement, child: HTMLElement) {
-      el.appendChild(child)
-      if (typeof elem != 'string' && elem.events && elem.events.children) {
-        Array.from(child.children).forEach(child => {
-          if (elem && elem.events && elem.events.children) {
-            child.dispatchEvent(new Event('rendered'))
-          }
-        })
-      }
-    }
-
     private addEvents(elem: ElementalElement, el: HTMLElement) {
       if (elem.events) {
         if (typeof elem.events.created == 'function') elem.events.created()
         for (let evtName in elem.events) {
-          if (evtName == 'children') continue
           let event = elem.events[evtName]
+          // If the event is not a function go to next item
+          if (typeof event != 'function') continue
           el.addEventListener(evtName, event.bind(el))
         }
+        el.dispatchEvent(new Event('rendered'))
       }
     }
 
     private addChildEvents(elm: ElementalElement, el: HTMLElement) {
       // Add the events to the child elements
       if (elm.events && elm.events.children) {
+        let children = Array.from(el.children)
         // Add the rest of the events on the children
         for (let evtName in elm.events.children) {
           let event = elm.events.children[evtName]
-          Array.from(el.children).forEach(child => child.addEventListener(evtName, event.bind(child)))
+          children.forEach(child => child.addEventListener(evtName, event.bind(child)))
         }
+        children.forEach(child => child.dispatchEvent(new Event('rendered')))
       }
     }
 
