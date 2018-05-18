@@ -1,12 +1,15 @@
 /// <reference path="../dist/element.d.ts"/>
 
 element({
-  element: '.container',
+  tag: '.container',
   children: [{
-    element: '.row',
+    tag: '.row',
+    events: {
+
+    },
     children: [
       '.col-6 Hello World',
-      '.col-6.text-right How are you'
+      '.col-6.text-right How are you?'
     ]
   }]
 })

@@ -9,20 +9,89 @@ namespace Elemental {
     attributes: { key: string, value: string }[]
   }
 
-  export interface EventObject {
-    [key: string]: any
-    rendered?(): void
-    children?: {
-      [key: string]: any
-      rendered?(): void
-    }
+  // export type JSEvents = 'change' | 'click' | 'mouseover'
+
+  export type JSEvents = {
+    change?(): void
+    click?(): void
+    mouseover?(): void
+    mouseout?(): void
+    keydown?(): void
+    load?(): void
+  }
+
+  export type ElementalEventsTypes = {
+    [key in keyof JSEvents]: () => void
+    // }
+
+    // export interface ElementalEvents {
+    // [key : string]: () => any
+    /**
+     * An event that gets triggered when the current object has been rendered.
+     *
+     * @memberof EventObject
+     */
+    // rendered: () => void
+    /**
+     * An object of events that will be added to the current element's children.
+     *
+     * @type {{
+     *       [key: string]: any
+     *       rendered?(): void
+     *     }}
+     * @memberof EventObject
+     */
+    // children ?: {
+    // [key in keyof JSEvents]: () => void
+    //   // [key: string]: any
+    //   /**
+    //    * An event that gets added to all children of the current element that gets triggered when the element gets rendered.
+    //    *
+    //    */
+    //   rendered ? (): void
+    // }
   }
 
   export interface ElementalElement {
-    element: string
-    text?: string
+    /**
+     * This is the element that will be created.
+     *
+     * * It is defined using a shorthand selector such as ".red#white[data-color=blue]".
+     * * Using child selectors are invalid such as ".red > .white" and ".red .white".
+     * * Anything after the first space will be converted to text content.
+     *
+     * @type {string}
+     * @memberof ElementalElement
+     */
+    tag: string
+    /**
+     * This is the text content of the element and overrides the selector text content.
+     *
+     * @type {string}
+     * @memberof ElementalElement
+     */
+    txt?: string
+    /**
+     * This is the children of the current element.
+     *
+     * * An array of either elements or string selectors will create multiple elements within the current element.
+     * * A single element will will create one element within the current element.
+     * * A string will create a single element within the current element.
+     *
+     * @type {((ElementalElement | string)[] | ElementalElement | string)}
+     * @memberof ElementalElement
+     */
     children?: (ElementalElement | string)[] | ElementalElement | string
-    events?: EventObject
+    /**
+     * These are the events for the current element.
+     *
+     * * A list of functions will automatically execute `addEventListener(propName)` on the current element.
+     * * The `children` property in this object is reserved for adding all the contained events on the current element's children.
+     *
+     * @type {ElementalEvents}
+     * @memberof ElementalElement
+     */
+    events?: ElementalEventsTypes
   }
 
   export interface RootElementalElement extends ElementalElement {
@@ -46,7 +115,7 @@ namespace Elemental {
     }
 
     private makeElement<T extends HTMLElement>(elem: ElementalElement | string, parent: HTMLElement): T {
-      let info = this.parseQuerySelector(typeof elem == 'string' ? elem : elem.element || '')
+      let info = this.parseQuerySelector(typeof elem == 'string' ? elem : elem.tag || '')
       let el = document.createElement(info.element)
       // Add the classes, attributes and the id to the element
       info.id.length > 0 && (el.id = info.id)
@@ -61,7 +130,7 @@ namespace Elemental {
       }
       // If the element isn't a string create from the object
       else {
-        let text = info.text.length > 0 ? info.text : elem.text && elem.text.length > 0 ? elem.text : ''
+        let text = elem.txt && elem.txt.length > 0 ? elem.txt : info.text.length > 0 ? info.text : ''
         text.length > 0 && el.appendChild(document.createTextNode(text))
         // Adds the events to the current element
         this.addEvents(elem, el)
