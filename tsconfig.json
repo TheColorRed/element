@@ -1,12 +1,33 @@
+// {
+//   "compilerOptions": {
+//     "target": "es2016",
+//     "module": "system",
+//     "strict": true,
+//     "outFile": "dist/element.js",
+//     "declaration": true
+//   },
+//   "include": [
+//     "src/**/*.ts"
+//   ]
+// }
 {
   "compilerOptions": {
-    "target": "es2016",
-    "module": "system",
+    "lib": [
+      "es2017",
+      "es2015",
+      "dom"
+    ],
+    "noImplicitAny": true,
+    "alwaysStrict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true, /* Report error when not all code paths in function return a value. */
+    "noFallthroughCasesInSwitch": true,
+    "allowJs": true,
     "strict": true,
-    "outFile": "dist/element.js",
-    "declaration": true
-  },
-  "include": [
-    "src/**/*.ts"
-  ]
+    "strictFunctionTypes": true,
+    "strictNullChecks": true,
+    "checkJs": true,
+    "noImplicitThis": true
+  }
 }

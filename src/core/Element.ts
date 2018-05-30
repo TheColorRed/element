@@ -9,47 +9,16 @@ namespace Elemental {
     attributes: { key: string, value: string }[]
   }
 
-  // export type JSEvents = 'change' | 'click' | 'mouseover'
-
-  export type JSEvents = {
-    change?(): void
-    click?(): void
-    mouseover?(): void
-    mouseout?(): void
-    keydown?(): void
-    load?(): void
+  export interface ElementalEventMap extends ElementEventMap {
+    'created': Event
   }
 
   export type ElementalEventsTypes = {
-    [key in keyof JSEvents]: () => void
-    // }
+    [key in keyof (HTMLElementEventMap & ElementalEventMap)]?: () => void
+  }
 
-    // export interface ElementalEvents {
-    // [key : string]: () => any
-    /**
-     * An event that gets triggered when the current object has been rendered.
-     *
-     * @memberof EventObject
-     */
-    // rendered: () => void
-    /**
-     * An object of events that will be added to the current element's children.
-     *
-     * @type {{
-     *       [key: string]: any
-     *       rendered?(): void
-     *     }}
-     * @memberof EventObject
-     */
-    // children ?: {
-    // [key in keyof JSEvents]: () => void
-    //   // [key: string]: any
-    //   /**
-    //    * An event that gets added to all children of the current element that gets triggered when the element gets rendered.
-    //    *
-    //    */
-    //   rendered ? (): void
-    // }
+  export interface ElementalEvents {
+    children?: ElementalEventsTypes
   }
 
   export interface ElementalElement {
@@ -91,7 +60,7 @@ namespace Elemental {
      * @type {ElementalEvents}
      * @memberof ElementalElement
      */
-    events?: ElementalEventsTypes
+    events?: ElementalEvents & ElementalEventsTypes
   }
 
   export interface RootElementalElement extends ElementalElement {
@@ -153,7 +122,7 @@ namespace Elemental {
       if (elem.events) {
         if (typeof elem.events.created == 'function') elem.events.created()
         for (let evtName in elem.events) {
-          let event = elem.events[evtName]
+          let event = (<any>elem.events)[evtName]
           // If the event is not a function go to next item
           if (typeof event != 'function') continue
           el.addEventListener(evtName, event.bind(el))
@@ -168,7 +137,7 @@ namespace Elemental {
         let children = Array.from(el.children)
         // Add the rest of the events on the children
         for (let evtName in elm.events.children) {
-          let event = elm.events.children[evtName]
+          let event = (<any>elm.events.children)[evtName]
           children.forEach(child => child.addEventListener(evtName, event.bind(child)))
         }
         children.forEach(child => child.dispatchEvent(new Event('rendered')))
